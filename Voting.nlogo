@@ -2,7 +2,7 @@ patches-own
 [
   vote   ;; my vote (0 or 1)
   total  ;; sum of votes around me
-  stubborn ;; true or false
+  stubborn
 ]
 
 to setup
@@ -17,37 +17,47 @@ to go
   ;; keep track of whether any patch has changed their vote
   let any-votes-changed? false
   let patch-count count patches
-  let stubborn-count round ((patch-count)*(.01)*(stubbornness))
-  show stubborn-count
-  ask n-of stubborn-count patches [ set stubborn true]
+  let stubborn-count round ((patch-count)*(0.01)*(stubbornness))
+  ask n-of stubborn-count patches [set stubborn true]
   ask patches[
     if stubborn != true
-      [set total (sum [vote] of neighbors)]]
-    ;; use two ask patches blocks so all patches compute "total"
-    ;; before any patches change their votes
+    [ set total (sum [vote] of neighbors) ]]
+  ;; use two ask patches blocks so all patches compute "total"
+  ;; before any patches change their votes
   ask patches[
     if stubborn != true
     [ let previous-vote vote
-      if total > 6 [ set vote 1 ]
-      if total < 3 [ set vote 0 ]
+      if total > 7 [ set vote 1 ]
+      if total < 1 [ set vote 0 ]
+      if total = 2
+        [ if change-vote-if-tied?
+          [ set vote (1 - vote) ] ]
+      if total = 3
+        [ if change-vote-if-tied?
+          [ set vote (1 - vote) ] ]
       if total = 4
-      [ if change-vote-if-tied?
-      [ set vote (1 - vote) ] ]
-    if total = 5
-    [ ifelse award-close-calls-to-loser?
-      [ set vote 0 ]
-      [ set vote 1 ] ]
-    if total = 3
-    [ ifelse award-close-calls-to-loser?
-      [ set vote 1 ]
-      [ set vote 0 ] ]
-    if vote != previous-vote
-    [ set any-votes-changed? true ]
-        recolor-patch]]
+        [ if change-vote-if-tied?
+          [ set vote (1 - vote) ] ]
+      if total = 5
+        [ if change-vote-if-tied?
+          [ set vote (1 - vote) ] ]
+      if total = 6
+        [ if change-vote-if-tied?
+          [ set vote (1 - vote) ] ]
+      if total = 7
+        [ ifelse award-close-calls-to-loser?
+          [ set vote 0 ]
+          [ set vote 1 ] ]
+      if total = 1
+        [ ifelse award-close-calls-to-loser?
+          [ set vote 1 ]
+          [ set vote 0 ] ]
+      if vote != previous-vote
+        [ set any-votes-changed? true ]
+      recolor-patch ]]
   ;; if the votes have stabilized, we stop the simulation
   if not any-votes-changed? [ stop ]
   tick
-
 end
 
 to recolor-patch  ;; patch procedure
